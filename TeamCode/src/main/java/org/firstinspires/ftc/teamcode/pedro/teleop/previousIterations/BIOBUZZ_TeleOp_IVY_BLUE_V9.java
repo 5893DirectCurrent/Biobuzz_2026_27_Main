@@ -1,5 +1,16 @@
 
-package org.firstinspires.ftc.teamcode.pedro.teleop;
+package org.firstinspires.ftc.teamcode.pedro.teleop.previousIterations;
+
+/*
+ * BIOBUZZ IVY V9: BLUE MATCH TELEOP
+ * Fixed starting pose until AprilTag field mapping is verified.
+ * Mirrored target: X = 2 * REFERENCE_X - live robot X; Y = 72.
+ * Target Z is reserved for later shooter trajectory calculations.
+ * Limelight initialization and ~30-second corrections remain COMMENTED OUT.
+ * Driver controls are unchanged from V5/V8.
+ * NOTE: Verify Ivy API and servo calibration on the actual robot.
+ */
+
 
 /*
  * BIOBUZZ TELEOP V5 - PEDRO PATHING + IVY
@@ -59,6 +70,13 @@ import com.qualcomm.robotcore.hardware.Servo;
 /*
  * Pedro Pathing imports
  */
+/*
+ * FUTURE LIMELIGHT IMPORTS (intentionally disabled)
+ * After AprilTag mapping and SDK verification, enable the imports needed for:
+ *   com.qualcomm.hardware.limelightvision.Limelight3A
+ *   com.qualcomm.hardware.limelightvision.LLResult
+ * Do not enable until the installed FTC SDK supports these types.
+ */
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.pedropathing.api.PoseFactory;
@@ -85,8 +103,8 @@ import static com.pedropathing.ivy.commands.Commands.infinite;
 import org.firstinspires.ftc.teamcode.pedro.misc.Constants;
 
 
-@TeleOp(name = "BIOBUZZ IVY V5")
-public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
+@TeleOp(name = "BIOBUZZ IVY BLUE V9")
+public class BIOBUZZ_TeleOp_IVY_BLUE_V9 extends LinearOpMode {
 
 
     /*
@@ -101,7 +119,7 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
      * based on this variable.
      *
      * IMPORTANT:
-     * Change this before the match if using this version.
+     * Alliance is fixed by this OpMode file; select RED or BLUE on Driver Hub.
      */
 
     private static final boolean BLUE_ALLIANCE = true;
@@ -149,24 +167,24 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
 
     private static final double SHOOTER_HIGH = 1800;
 
-    /*
-        // --------------------------------------------------------
-        // SHOOTER PIDF
-        // --------------------------------------------------------
-        //
-        // PIDF helps the motor reach and maintain target velocity.
-        //
-        // P = Corrects current velocity error.
-        // I = Corrects accumulated error over time.
-        // D = Reacts to how quickly the error changes.
-        // F = Feedforward estimate of required motor output.
-        //
-        // TODO:
-        // Replace these placeholders with values from testing.
-        //
-        // All-zero values are NOT a tuned shooter controller.
-        // --------------------------------------------------------
-    */
+/*
+    // --------------------------------------------------------
+    // SHOOTER PIDF
+    // --------------------------------------------------------
+    //
+    // PIDF helps the motor reach and maintain target velocity.
+    //
+    // P = Corrects current velocity error.
+    // I = Corrects accumulated error over time.
+    // D = Reacts to how quickly the error changes.
+    // F = Feedforward estimate of required motor output.
+    //
+    // TODO:
+    // Replace these placeholders with values from testing.
+    //
+    // All-zero values are NOT a tuned shooter controller.
+    // --------------------------------------------------------
+*/
     private static final double P = 0.0;
     private static final double I = 0.0;
     private static final double D = 0.0;
@@ -228,11 +246,23 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
      * Verify against the actual Pedro field coordinate system.
      */
 
-    private static final double BLUE_HIVE_X = 72.0;
-    private static final double BLUE_HIVE_Y = 59.25;
+    private static final double REFERENCE_X = 86.0;
+    private static final double TARGET_Y = 72.0;
+    private static final double TARGET_Z_IN = 0.0; /* TODO: measured target height */
 
-    private static final double RED_HIVE_X = 72.0;
-    private static final double RED_HIVE_Y = 84.75;
+    /* Starting pose is temporary until AprilTag localization is ready.
+       Set these to the robot's actual placement and heading before a run. */
+    private static final double START_X_IN = 24.0;
+    private static final double START_Y_IN = 24.0;
+    private static final double START_HEADING_DEG = 0.0;
+
+    /* Turret offset from Pedro robot origin, in robot-local inches.
+       X forward, Y left; calibrate before relying on auto-aim. */
+    private static final double TURRET_OFFSET_X_IN = 0.0;
+    private static final double TURRET_OFFSET_Y_IN = 0.0;
+    private static final double TURRET_MOUNT_ZERO_DEG = 0.0;
+    private static final double TURRET_DEGREES_PER_SERVO_UNIT = 180.0;
+    private static final double TURRET_MAX_ANGLE_DEG = 90.0;
 
 
     /*
@@ -280,6 +310,14 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
      * Allows us to define starting headings in degrees.
      */
 
+    /*
+     * FUTURE LIMELIGHT STATE (disabled)
+     * Store the Limelight3A device, the last accepted field pose,
+     * the timestamp of the last correction attempt, and localization status.
+     * Example configuration: correction interval = 30_000 milliseconds.
+     * Use a monotonic FTC timer (e.g. ElapsedTime) when implemented.
+     */
+
     private Follower follower;
 
     private final PoseFactory poseFactory =
@@ -294,7 +332,7 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
      * to calculate incorrect turret angles.
      */
     private final Pose startPose =
-            poseFactory.of(24, 24, 0);
+            poseFactory.of(START_X_IN, START_Y_IN, START_HEADING_DEG);
 
 
     /*
@@ -527,10 +565,26 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
          *
          * Create the follower using team configuration
          */
+        /*
+         * FUTURE LIMELIGHT HARDWARE SETUP (disabled)
+         * 1. Obtain the Limelight3A from hardwareMap using its actual name.
+         * 2. Select the verified AprilTag pipeline and start the camera.
+         * 3. Confirm the robot-to-camera transform and field map.
+         * 4. Read LLResult and reject invalid / stale pose estimates.
+         * This must not interfere with existing Pedro initialization.
+         */
         follower = Constants.create(hardwareMap);
 
         /*
          * Tell Pedro where the robot starts
+         */
+        /*
+         * FUTURE INITIAL APRILTAG LOCALIZATION (disabled)
+         * For now, startPose remains the active fixed-coordinate fallback.
+         * When the pipeline is ready, acquire a valid field-relative pose,
+         * transform its units/origin/axes/heading into Pedro coordinates,
+         * and initialize Pedro from that pose instead of startPose.
+         * Never assume a visible tag alone guarantees a usable robot pose.
          */
         follower.setPose(startPose);
 
@@ -542,7 +596,7 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
         createCommands();
 
 
-        telemetry.addLine("BIOBUZZ IVY V5 READY");
+        telemetry.addLine("BIOBUZZ IVY BLUE V9 READY");
 
         telemetry.addData(
                 "Alliance",
@@ -595,6 +649,18 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
                 /*
                  * STEP 1:
                  * Update Pedro's estimate of robot position.
+                 */
+                /*
+                 * FUTURE PERIODIC LIMELIGHT RELOCALIZATION (disabled)
+                 * After follower.update(), approximately every 30 seconds:
+                 *   - Request the newest AprilTag robot-pose estimate.
+                 *   - Check target validity, freshness, ambiguity, and pose quality.
+                 *   - Convert Limelight coordinates to Pedro's field frame.
+                 *   - Reject impossible jumps and inconsistent heading.
+                 *   - Apply an accepted correction via the verified Pedro API.
+                 *   - Record the attempt time even when no tag is visible.
+                 * Continue Pedro odometry between accepted corrections.
+                 * Consider motion/latency compensation before using setPose.
                  */
                 follower.update();
 
@@ -1138,194 +1204,44 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
      */
 
     private void aimAtHive() {
-
-
-        /*
-         * STEP 1: GET ROBOT POSITION
-         *
-         * Pedro estimates:
-         * X = Horizontal field coordinate
-         * Y = Vertical field coordinate
-         * Heading = Robot orientation in radians
-         */
-
+        /* Dynamic virtual target: mirror robot X across alliance reference X.
+           RED: (116 - robotX, 72, Z); BLUE: (172 - robotX, 72, Z).
+           TARGET_Z_IN is retained for future shooter elevation calculations.
+           This command only controls the turret's horizontal direction. */
         Pose pose = follower.pose();
+        double robotX = pose.x();
+        double robotY = pose.y();
+        double heading = pose.heading();
+        double targetX = 2.0 * REFERENCE_X - robotX;
+        double targetY = TARGET_Y;
 
+        /* Convert turret's robot-local mounting offset to field coordinates. */
+        double turretX = robotX
+                + Math.cos(heading) * TURRET_OFFSET_X_IN
+                - Math.sin(heading) * TURRET_OFFSET_Y_IN;
+        double turretY = robotY
+                + Math.sin(heading) * TURRET_OFFSET_X_IN
+                + Math.cos(heading) * TURRET_OFFSET_Y_IN;
 
-        /*
-         * STEP 2: SELECT ALLIANCE HIVE
-         */
-
-        double targetX = BLUE_ALLIANCE
-                ? BLUE_HIVE_X
-                : RED_HIVE_X;
-
-        double targetY = BLUE_ALLIANCE
-                ? BLUE_HIVE_Y
-                : RED_HIVE_Y;
-
-
-        /*
-         * STEP 3: CALCULATE X AND Y DIFFERENCES
-         *
-         * dx = Horizontal distance from robot to target.
-         * dy = Vertical distance from robot to target.
-         *
-         * These are signed differences.
-         */
-
-        double dx = targetX - pose.x();
-
-        double dy = targetY - pose.y();
-
-
-        /*
-         * STEP 4: CALCULATE DISTANCE
-         *
-         * Math.hypot(dx, dy) calculates:
-         *
-         * distance = sqrt(dx^2 + dy^2)
-         *
-         * We can later use this distance to automatically
-         * adjust shooter velocity.
-         */
-
+        double dx = targetX - turretX;
+        double dy = targetY - turretY;
         distanceToHive = Math.hypot(dx, dy);
-
-
-        /*
-         * STEP 5: CALCULATE FIELD ANGLE
-         *
-         * atan2(dy, dx) calculates the direction from the
-         * robot's position toward the HIVE.
-         *
-         * atan2 returns an angle in radians.
-         *
-         * This angle is relative to the FIELD, not the robot.
-         */
-
         double fieldAngle = Math.atan2(dy, dx);
-
-
-        /*
-         * STEP 6: ACCOUNT FOR ROBOT HEADING
-         *
-         * Suppose:
-         *
-         * HIVE direction on field = 60 degrees
-         * Robot heading           = 20 degrees
-         *
-         * Required turret angle:
-         *
-         * 60 - 20 = 40 degrees
-         *
-         * This makes the turret compensate as the robot turns.
-         */
-
-        double relativeAngle =
-                fieldAngle - pose.heading();
-
-
-        /*
-         * STEP 7: NORMALIZE ANGLE
-         *
-         * Angles wrap around after a full revolution.
-         *
-         * For example:
-         * 350 degrees is equivalent to -10 degrees.
-         *
-         * These loops keep the angle between -180 and +180.
-         *
-         * Math.PI radians = 180 degrees.
-         */
-
-        while (relativeAngle > Math.PI) {
-
-            relativeAngle -= 2.0 * Math.PI;
-        }
-
-        while (relativeAngle < -Math.PI) {
-
-            relativeAngle += 2.0 * Math.PI;
-        }
-
-
-        /*
-         * Save field angle for telemetry
-         */
         angleToHive = Math.toDegrees(fieldAngle);
-
-
-        /*
-         * Convert robot-relative angle to degrees
-         */
+        double relativeAngle = fieldAngle - heading
+                - Math.toRadians(TURRET_MOUNT_ZERO_DEG);
+        relativeAngle = Math.atan2(Math.sin(relativeAngle), Math.cos(relativeAngle));
         turretAngle = Math.toDegrees(relativeAngle);
 
-
-        /*
-         * STEP 8: LIMIT REQUESTED TURRET ANGLE
-         *
-         * We currently assume the turret has 180 degrees
-         * of total travel:
-         *
-         * -90 degrees to +90 degrees.
-         *
-         * If the target is outside this range, the turret
-         * cannot point directly at it.
-         */
-
-        double limitedAngle = Math.max(
-                -90.0,
-                Math.min(90.0, turretAngle)
-        );
-
-
-        /*
-         * STEP 9: CONVERT ANGLE TO SERVO POSITION
-         *
-         * Our INITIAL assumed mapping is:
-         *
-         * -90 degrees -> servo 0.00
-         * 0 degrees -> servo 0.50
-         * +90 degrees -> servo 1.00
-         *
-         * This assumes the turret's actual mechanical travel
-         * matches the servo position mapping.
-         *
-         * We still need to calibrate this on the robot.
-         */
-
-        double requestedPosition =
-                TURRET_CENTER
-                        + TURRET_DIRECTION
-                        * (limitedAngle / 180.0);
-
-
-        /*
-         * STEP 10: DETECT AIM LIMITS
-         *
-         * aimLimited becomes true when:
-         *
-         * 1. The target angle exceeds +/-90 degrees.
-         * OR
-         * 2. The servo position exceeds software limits.
-         *
-         * This is useful because auto-aim being ON does not
-         * guarantee the turret can physically reach the HIVE.
-         */
-
-        aimLimited =
-                Math.abs(turretAngle - limitedAngle) > 0.01
-                        || requestedPosition < TURRET_MIN
-                        || requestedPosition > TURRET_MAX;
-
-
-        /*
-         * STEP 11: APPLY LIMITS AND MOVE TURRET
-         */
-
+        /* Do not wrap an unreachable rearward target into a reachable angle. */
+        double limitedAngle = Math.max(-TURRET_MAX_ANGLE_DEG,
+                Math.min(TURRET_MAX_ANGLE_DEG, turretAngle));
+        double requestedPosition = TURRET_CENTER
+                + TURRET_DIRECTION * limitedAngle / TURRET_DEGREES_PER_SERVO_UNIT;
+        aimLimited = Math.abs(turretAngle - limitedAngle) > 0.01
+                || requestedPosition < TURRET_MIN
+                || requestedPosition > TURRET_MAX;
         turretPosition = clampTurret(requestedPosition);
-
         turret.setPosition(turretPosition);
     }
 
@@ -1373,121 +1289,22 @@ public class BIOBUZZ_TeleOp_IVY_V5 extends LinearOpMode {
      * Telemetry does not directly control mechanisms.
      */
 
+    /* Driver-facing telemetry: keep the match display easy to scan. */
     private void updateTelemetry() {
-
         Pose pose = follower.pose();
-
-
-        telemetry.addLine("===== BIOBUZZ IVY V5 =====");
-
-        telemetry.addData(
-                "Alliance",
-                BLUE_ALLIANCE ? "BLUE" : "RED"
-        );
-
-
-        /*
-         * PEDRO LOCALIZATION
-         */
-
-        telemetry.addLine("===== PEDRO =====");
-
-        telemetry.addData("Robot X", "%.2f", pose.x());
-
-        telemetry.addData("Robot Y", "%.2f", pose.y());
-
-        telemetry.addData(
-                "Heading",
-                "%.2f deg",
-                Math.toDegrees(pose.heading())
-        );
-
-
-        /*
-         * IVY COMMAND STATUS
-         */
-
-        telemetry.addLine("===== IVY TURRET =====");
-
-        telemetry.addData(
-                "Mode",
-                autoAimEnabled ? "AUTO" : "MANUAL"
-        );
-
-
-        /*
-         * Shows whether the manual command is executing
-         */
-        telemetry.addData(
-                "Manual Command Running",
-                Scheduler.isRunning(manualTurretCommand)
-        );
-
-
-        /*
-         * Shows whether auto-aim is executing
-         */
-        telemetry.addData(
-                "Auto Aim Command Running",
-                Scheduler.isRunning(autoAimCommand)
-        );
-
-
-        /*
-         * TURRET DATA
-         */
-
-        telemetry.addData(
-                "Turret Position",
-                "%.3f",
-                turretPosition
-        );
-
-        telemetry.addData(
-                "Requested Angle",
-                "%.2f deg",
-                turretAngle
-        );
-
-        telemetry.addData(
-                "Aim Limited",
-                aimLimited ? "YES" : "NO"
-        );
-
-        telemetry.addData(
-                "HIVE Distance",
-                "%.2f",
-                distanceToHive
-        );
-
-
-        /*
-         * SHOOTER DATA
-         */
-
-        telemetry.addLine("===== SHOOTER =====");
-
-        telemetry.addData(
-                "Shooter",
-                shooterOn ? "ON" : "OFF"
-        );
-
-        telemetry.addData(
-                "Target Velocity",
-                "%.0f",
-                shooterTarget
-        );
-
-        telemetry.addData(
-                "Actual Velocity",
-                "%.0f",
-                shooter.getVelocity()
-        );
-
-
-        /*
-         * Send all telemetry to the Driver Hub
-         */
+        telemetry.addLine("BIOBUZZ BLUE | IVY V9");
+        telemetry.addData("Turret", autoAimEnabled ? "AUTO" : "MANUAL");
+        telemetry.addData("Aim limit", aimLimited ? "LIMITED" : "OK");
+        telemetry.addData("Shooter", shooterOn ? "ON" : "OFF");
+        telemetry.addData("Shooter target", "%.0f ticks/s", shooterTarget);
+        telemetry.addData("Shooter actual", "%.0f ticks/s", shooter.getVelocity());
+        telemetry.addData("Position (in)", "%.1f, %.1f", pose.x(), pose.y());
+        telemetry.addData("Heading", "%.1f deg", Math.toDegrees(pose.heading()));
+        telemetry.addData("Virtual target (in)", "%.1f, %.1f, %.1f",
+                2.0 * REFERENCE_X - pose.x(), TARGET_Y, TARGET_Z_IN);
+        telemetry.addData("Localization", "FIXED START / PEDRO");
+        /* FUTURE LIMELIGHT STATUS (disabled): show last accepted tag pose,
+           age of last correction, and whether auto-aim localization is valid. */
         telemetry.update();
     }
 }

@@ -1,8 +1,8 @@
 
-package org.firstinspires.ftc.teamcode.pedro.teleop;
+package org.firstinspires.ftc.teamcode.pedro.teleop.previousIterations;
 
 /*
- * BIOBUZZ IVY V9: BLUE MATCH TELEOP
+ * BIOBUZZ IVY V9: RED MATCH TELEOP
  * Fixed starting pose until AprilTag field mapping is verified.
  * Mirrored target: X = 2 * REFERENCE_X - live robot X; Y = 72.
  * Target Z is reserved for later shooter trajectory calculations.
@@ -103,8 +103,8 @@ import static com.pedropathing.ivy.commands.Commands.infinite;
 import org.firstinspires.ftc.teamcode.pedro.misc.Constants;
 
 
-@TeleOp(name = "BIOBUZZ IVY BLUE V9")
-public class BIOBUZZ_TeleOp_IVY_BLUE_V9 extends LinearOpMode {
+@TeleOp(name = "BIOBUZZ IVY RED V9")
+public class BIOBUZZ_TeleOp_IVY_RED_V9 extends LinearOpMode {
 
 
     /*
@@ -122,7 +122,7 @@ public class BIOBUZZ_TeleOp_IVY_BLUE_V9 extends LinearOpMode {
      * Alliance is fixed by this OpMode file; select RED or BLUE on Driver Hub.
      */
 
-    private static final boolean BLUE_ALLIANCE = true;
+    private static final boolean BLUE_ALLIANCE = false;
 
 
     /*
@@ -246,7 +246,7 @@ public class BIOBUZZ_TeleOp_IVY_BLUE_V9 extends LinearOpMode {
      * Verify against the actual Pedro field coordinate system.
      */
 
-    private static final double REFERENCE_X = 86.0;
+    private static final double REFERENCE_X = 58.0;
     private static final double TARGET_Y = 72.0;
     private static final double TARGET_Z_IN = 0.0; /* TODO: measured target height */
 
@@ -596,7 +596,7 @@ public class BIOBUZZ_TeleOp_IVY_BLUE_V9 extends LinearOpMode {
         createCommands();
 
 
-        telemetry.addLine("BIOBUZZ IVY BLUE V9 READY");
+        telemetry.addLine("BIOBUZZ IVY RED V9 READY");
 
         telemetry.addData(
                 "Alliance",
@@ -1292,7 +1292,7 @@ public class BIOBUZZ_TeleOp_IVY_BLUE_V9 extends LinearOpMode {
     /* Driver-facing telemetry: keep the match display easy to scan. */
     private void updateTelemetry() {
         Pose pose = follower.pose();
-        telemetry.addLine("BIOBUZZ BLUE | IVY V9");
+        telemetry.addLine("BIOBUZZ RED | IVY V9");
         telemetry.addData("Turret", autoAimEnabled ? "AUTO" : "MANUAL");
         telemetry.addData("Aim limit", aimLimited ? "LIMITED" : "OK");
         telemetry.addData("Shooter", shooterOn ? "ON" : "OFF");
