@@ -74,7 +74,8 @@ abstract class BiobuzzMatch_BLUE extends LinearOpMode {
                 telemetry.addData("Aim limit", turret.isLimited() ? "LIMITED" : "OK");
                 telemetry.addData("Shooter", shooter.isEnabled() ? "ON" : "OFF");
                 telemetry.addData("Shooter target", "%.0f ticks/s", shooter.target());
-                telemetry.addData("Shooter actual", "%.0f ticks/s", shooter.actual());
+                telemetry.addData("Shooter left", "%.0f ticks/s", shooter.actualLeft());
+                telemetry.addData("Shooter right", "%.0f ticks/s", shooter.actualRight());
                 telemetry.addData("Pose", "%.1f, %.1f, %.1f deg",
                         pose.x(), pose.y(), Math.toDegrees(pose.heading()));
                 telemetry.addData("Localization", "FIXED START / PEDRO");
@@ -108,7 +109,7 @@ final class RobotTuning_BLUE {
 final class RobotParts_BLUE {
     final HardwareMap map;
     DcMotor lf, rf, lb, rb, intake, transfer;
-    DcMotorEx shooter;
+    DcMotorEx shooterLeft, shooterRight;
     Servo turret;
     RobotParts_BLUE(HardwareMap map) { this.map = map; }
     void initDrive() {
@@ -129,13 +130,23 @@ final class RobotParts_BLUE {
         transfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
     void initShooter() {
-        shooter = map.get(DcMotorEx.class, "shooter");
-        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        /* PIDF values are placeholders; zero values are NOT tuned for shooting. */
-        shooter.setVelocityPIDFCoefficients(RobotTuning_BLUE.SHOOTER_P, RobotTuning_BLUE.SHOOTER_I,
-                RobotTuning_BLUE.SHOOTER_D, RobotTuning_BLUE.SHOOTER_F);
+        /* Configure both motors for the same overhand shooter mechanism.
+         * Hardware names and physical directions must be verified on the robot.
+         * Reverse one motor in configuration if its mounting requires it.
+         */
+        shooterLeft = map.get(DcMotorEx.class, "shooterLeft");
+        shooterRight = map.get(DcMotorEx.class, "shooterRight");
+        shooterLeft.setDirection(DcMotor.Direction.FORWARD);
+        shooterRight.setDirection(DcMotor.Direction.REVERSE);
+        for (DcMotorEx motor : new DcMotorEx[]{shooterLeft, shooterRight}) {
+            motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            /* PIDF coefficients remain untuned placeholders. */
+            motor.setVelocityPIDFCoefficients(RobotTuning_BLUE.SHOOTER_P,
+                    RobotTuning_BLUE.SHOOTER_I, RobotTuning_BLUE.SHOOTER_D,
+                    RobotTuning_BLUE.SHOOTER_F);
+        }
     }
     void initTurret() {
         turret = map.get(Servo.class, "turret");
@@ -145,7 +156,8 @@ final class RobotParts_BLUE {
         for (DcMotor m : new DcMotor[]{lf, rf, lb, rb, intake, transfer}) {
             if (m != null) m.setPower(0);
         }
-        if (shooter != null) shooter.setVelocity(0);
+        if (shooterLeft != null) shooterLeft.setVelocity(0);
+        if (shooterRight != null) shooterRight.setVelocity(0);
     }
 }
 
@@ -187,18 +199,21 @@ final class ShooterPart_BLUE {
     private boolean lastA, enabled;
     private double target = RobotTuning_BLUE.SHOOTER_LOW;
     ShooterPart_BLUE(RobotParts_BLUE h) { this.h = h; h.initShooter(); }
-    DcMotorEx requirement() { return h.shooter; }
+    DcMotorEx[] requirements() { return new DcMotorEx[]{h.shooterLeft, h.shooterRight}; }
     void update(Gamepad g) {
         if (g.a && !lastA) enabled = !enabled;
         lastA = g.a;
         if (g.dpad_up) target = RobotTuning_BLUE.SHOOTER_HIGH;
         else if (g.dpad_left) target = RobotTuning_BLUE.SHOOTER_MED;
         else if (g.dpad_down) target = RobotTuning_BLUE.SHOOTER_LOW;
-        h.shooter.setVelocity(enabled ? target : 0);
+        h.shooterLeft.setVelocity(enabled ? target : 0);
+        h.shooterRight.setVelocity(enabled ? target : 0);
     }
     boolean isEnabled() { return enabled; }
     double target() { return target; }
-    double actual() { return h.shooter.getVelocity(); }
+    double actual() { return (actualLeft() + actualRight()) / 2.0; }
+    double actualLeft() { return h.shooterLeft.getVelocity(); }
+    double actualRight() { return h.shooterRight.getVelocity(); }
 }
 
 /** Pure math. RED mirror: 116 - robotX. BLUE mirror: 172 - robotX. */
@@ -272,7 +287,7 @@ final class BiobuzzIvy_BLUE {
         return infinite(() -> s.update(g1, g2)).requiring(s.requirement());
     }
     static Command shooter(ShooterPart_BLUE s, Gamepad g) {
-        return infinite(() -> s.update(g)).requiring(s.requirement());
+        return infinite(() -> s.update(g)).requiring(s.requirements());
     }
     static Command manualTurret(TurretPart_BLUE s, Gamepad g) {
         return infinite(() -> s.manual(g)).requiring(s.requirement());

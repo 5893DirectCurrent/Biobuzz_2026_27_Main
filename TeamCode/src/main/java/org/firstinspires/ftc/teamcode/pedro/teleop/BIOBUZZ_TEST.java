@@ -21,7 +21,7 @@ import org.firstinspires.ftc.teamcode.pedro.misc.Constants;
 @TeleOp(name = "BIOBUZZ TEST")
 public class BIOBUZZ_TEST extends LinearOpMode {
     private static final String[] MODES = {
-        "AIM MATH (NO HARDWARE)", "DRIVE", "INTAKE", "TRANSFER", "SHOOTER", "TURRET"
+            "AIM MATH (NO HARDWARE)", "DRIVE", "INTAKE", "TRANSFER", "SHOOTER", "TURRET"
     };
     @Override public void runOpMode() {
         int selected = 0;
@@ -104,7 +104,7 @@ final class RobotTuning_TEST {
 final class RobotParts_TEST {
     final HardwareMap map;
     DcMotor lf, rf, lb, rb, intake, transfer;
-    DcMotorEx shooter;
+    DcMotorEx shooterLeft, shooterRight;
     Servo turret;
     RobotParts_TEST(HardwareMap map) { this.map = map; }
     void initDrive() {
@@ -125,13 +125,23 @@ final class RobotParts_TEST {
         transfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
     void initShooter() {
-        shooter = map.get(DcMotorEx.class, "shooter");
-        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        /* PIDF values are placeholders; zero values are NOT tuned for shooting. */
-        shooter.setVelocityPIDFCoefficients(RobotTuning_TEST.SHOOTER_P, RobotTuning_TEST.SHOOTER_I,
-                RobotTuning_TEST.SHOOTER_D, RobotTuning_TEST.SHOOTER_F);
+        /* Configure both motors for the same overhand shooter mechanism.
+         * Hardware names and physical directions must be verified on the robot.
+         * Reverse one motor in configuration if its mounting requires it.
+         */
+        shooterLeft = map.get(DcMotorEx.class, "shooterLeft");
+        shooterRight = map.get(DcMotorEx.class, "shooterRight");
+        shooterLeft.setDirection(DcMotor.Direction.FORWARD);
+        shooterRight.setDirection(DcMotor.Direction.REVERSE);
+        for (DcMotorEx motor : new DcMotorEx[]{shooterLeft, shooterRight}) {
+            motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            /* PIDF coefficients remain untuned placeholders. */
+            motor.setVelocityPIDFCoefficients(RobotTuning_TEST.SHOOTER_P,
+                    RobotTuning_TEST.SHOOTER_I, RobotTuning_TEST.SHOOTER_D,
+                    RobotTuning_TEST.SHOOTER_F);
+        }
     }
     void initTurret() {
         turret = map.get(Servo.class, "turret");
@@ -141,7 +151,8 @@ final class RobotParts_TEST {
         for (DcMotor m : new DcMotor[]{lf, rf, lb, rb, intake, transfer}) {
             if (m != null) m.setPower(0);
         }
-        if (shooter != null) shooter.setVelocity(0);
+        if (shooterLeft != null) shooterLeft.setVelocity(0);
+        if (shooterRight != null) shooterRight.setVelocity(0);
     }
 }
 
@@ -183,18 +194,21 @@ final class ShooterPart_TEST {
     private boolean lastA, enabled;
     private double target = RobotTuning_TEST.SHOOTER_LOW;
     ShooterPart_TEST(RobotParts_TEST h) { this.h = h; h.initShooter(); }
-    DcMotorEx requirement() { return h.shooter; }
+    DcMotorEx[] requirements() { return new DcMotorEx[]{h.shooterLeft, h.shooterRight}; }
     void update(Gamepad g) {
         if (g.a && !lastA) enabled = !enabled;
         lastA = g.a;
         if (g.dpad_up) target = RobotTuning_TEST.SHOOTER_HIGH;
         else if (g.dpad_left) target = RobotTuning_TEST.SHOOTER_MED;
         else if (g.dpad_down) target = RobotTuning_TEST.SHOOTER_LOW;
-        h.shooter.setVelocity(enabled ? target : 0);
+        h.shooterLeft.setVelocity(enabled ? target : 0);
+        h.shooterRight.setVelocity(enabled ? target : 0);
     }
     boolean isEnabled() { return enabled; }
     double target() { return target; }
-    double actual() { return h.shooter.getVelocity(); }
+    double actual() { return (actualLeft() + actualRight()) / 2.0; }
+    double actualLeft() { return h.shooterLeft.getVelocity(); }
+    double actualRight() { return h.shooterRight.getVelocity(); }
 }
 
 /** Pure math. RED mirror: 116 - robotX. BLUE mirror: 172 - robotX. */
@@ -268,7 +282,7 @@ final class BiobuzzIvy_TEST {
         return infinite(() -> s.update(g1, g2)).requiring(s.requirement());
     }
     static Command shooter(ShooterPart_TEST s, Gamepad g) {
-        return infinite(() -> s.update(g)).requiring(s.requirement());
+        return infinite(() -> s.update(g)).requiring(s.requirements());
     }
     static Command manualTurret(TurretPart_TEST s, Gamepad g) {
         return infinite(() -> s.manual(g)).requiring(s.requirement());
