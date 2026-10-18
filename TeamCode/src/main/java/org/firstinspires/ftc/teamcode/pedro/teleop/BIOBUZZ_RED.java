@@ -136,7 +136,7 @@ final class RobotParts_RED {
          */
         shooterLeft = map.get(DcMotorEx.class, "shooterLeft");
         shooterRight = map.get(DcMotorEx.class, "shooterRight");
-        shooterLeft.setDirection(DcMotor.Direction.FORWARD);
+        shooterLeft.setDirection(DcMotor.Direction.REVERSE);
         shooterRight.setDirection(DcMotor.Direction.REVERSE);
         for (DcMotorEx motor : new DcMotorEx[]{shooterLeft, shooterRight}) {
             motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);

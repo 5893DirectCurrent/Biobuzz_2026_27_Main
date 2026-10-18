@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 @TeleOp(name = "BIOBUZZ Shooter PIDF Tester", group = "Testing")
 public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
@@ -12,16 +13,24 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
     // HARDWARE
     // ============================================================
 
-    private DcMotorEx shooter;
+    private DcMotorEx shooterLeft;
+    private DcMotorEx shooterRight;
+    private DcMotor intake;
+    private DcMotor LF, LB, RF, RB;
+
+    /* Intake is controlled independently of the two shooter motors. */
+    public static double INTAKE_POWER = 1;
+    public static double TRIGGER_DEADBAND = 0.15;
+    public static double DRIVE_SPEED_LIMIT = 0.80; /* Initial testing speed limit. */
 
     // ============================================================
     // STARTING PIDF VALUES
     // ============================================================
 
-    public static double P = 0.0000;
+    public static double P = 1.0000;
     public static double I = 0.0000;
     public static double D = 0.0000;
-    public static double F = 0.0000;
+    public static double F = 12.0000;
 
     // ============================================================
     // TEST SETTINGS
@@ -32,8 +41,8 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
     // How much each button press changes the value
     public static double P_INCREMENT = 0.0001;
     public static double I_INCREMENT = 0.00001;
-    public static double D_INCREMENT = 0.0001;
-    public static double F_INCREMENT = 0.0001;
+    public static double D_INCREMENT = 0.1;
+    public static double F_INCREMENT = 0.5;
 
     // ============================================================
     // BUTTON STATE
@@ -53,6 +62,8 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
     private boolean lastRightBumper = false;
 
     private boolean shooterRunning = false;
+    private boolean lastStart = false;
+    private boolean lastLeftStickButton = false;
 
     @Override
     public void runOpMode() {
@@ -61,17 +72,49 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
         // HARDWARE
         // ========================================================
 
-        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        shooterLeft = hardwareMap.get(DcMotorEx.class, "shooterLeft");
+        shooterRight = hardwareMap.get(DcMotorEx.class, "shooterRight");
+        /* Mecanum drivetrain, copied from Robot_Centric_Drive.java. */
+        LF = hardwareMap.get(DcMotor.class, "LF");
+        LB = hardwareMap.get(DcMotor.class, "LB");
+        RF = hardwareMap.get(DcMotor.class, "RF");
+        RB = hardwareMap.get(DcMotor.class, "RB");
+        RF.setDirection(DcMotor.Direction.REVERSE);
+        RB.setDirection(DcMotor.Direction.REVERSE);
+        LF.setDirection(DcMotor.Direction.FORWARD);
+        LB.setDirection(DcMotor.Direction.FORWARD);
+        for (DcMotor motor : new DcMotor[]{LF, LB, RF, RB}) {
+            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            motor.setPower(0);
+        }
 
-        shooter.setMode(
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intake.setPower(0);
+
+        /* Verify directions so both wheels propel the game piece correctly. */
+        shooterLeft.setDirection(DcMotorEx.Direction.FORWARD);
+        shooterRight.setDirection(DcMotorEx.Direction.REVERSE);
+
+        shooterLeft.setMode(
                 com.qualcomm.robotcore.hardware.DcMotor.RunMode.RUN_USING_ENCODER
         );
 
-        shooter.setZeroPowerBehavior(
+        shooterRight.setMode(
+                com.qualcomm.robotcore.hardware.DcMotor.RunMode.RUN_USING_ENCODER
+        );
+
+        shooterLeft.setZeroPowerBehavior(
                 com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.FLOAT
         );
 
-        // Apply starting PIDF
+        shooterRight.setZeroPowerBehavior(
+                com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.FLOAT
+        );
+
+        /* Nonzero initial feedforward lets the velocity controller spin up.
+         * These are starting estimates, not tuned PIDF coefficients. */
         applyPIDF();
 
         telemetry.addLine("BIOBUZZ SHOOTER PIDF TESTER");
@@ -80,40 +123,81 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
         telemetry.addLine("A / B     = Change P");
         telemetry.addLine("X / Y     = Change F");
         telemetry.addLine("D-PAD     = Change target velocity");
-        telemetry.addLine("Bumpers   = Change D");
-        telemetry.addLine("START     = Shooter ON/OFF");
+        telemetry.addLine("Bumpers   = Change I");
+        telemetry.addLine("START or L3 = Shooter ON/OFF");
+        telemetry.addLine("Left stick = Drive / strafe");
+        telemetry.addLine("Right stick X = Rotate");
+        telemetry.addLine("RT hold = Intake forward");
+        telemetry.addLine("LT hold = Intake reverse");
         telemetry.addLine("");
         telemetry.addLine("Ready!");
         telemetry.update();
 
         waitForStart();
+        if (isStopRequested()) return;
 
-        while (opModeIsActive()) {
+        /* Require a fresh button press after START. */
+        lastStart = gamepad1.start;
+        lastLeftStickButton = gamepad1.left_stick_button;
 
-            // ====================================================
-            // PIDF ADJUSTMENT
-            // ====================================================
+        try {
+            while (opModeIsActive()) {
 
-            adjustPIDF();
+                // ====================================================
+                // PIDF ADJUSTMENT
+                // ====================================================
 
-            // ====================================================
-            // SHOOTER
-            // ====================================================
+                adjustPIDF();
+                driveRobot();
 
-            if (shooterRunning) {
+                /* START or left-stick click toggles both motors.
+                 * L3 is an alternative if START is reserved on the controller. */
+                if ((gamepad1.start && !lastStart)
+                        || (gamepad1.left_stick_button && !lastLeftStickButton)) {
+                    shooterRunning = !shooterRunning;
+                }
+                lastStart = gamepad1.start;
+                lastLeftStickButton = gamepad1.left_stick_button;
 
-                shooter.setVelocity(TARGET_VELOCITY);
+                // ====================================================
+                // SHOOTER
+                // ====================================================
 
-            } else {
+                if (shooterRunning) {
 
-                shooter.setVelocity(0);
+                    shooterLeft.setVelocity(TARGET_VELOCITY);
+                    shooterRight.setVelocity(TARGET_VELOCITY);
+
+                } else {
+
+                    shooterLeft.setVelocity(0);
+                    shooterRight.setVelocity(0);
+                }
+
+                /* Hold RT to intake, LT to reverse, release to stop.
+                 * Reverse takes priority if both triggers are held. */
+                double intakePower = 0;
+                if (gamepad1.left_trigger > TRIGGER_DEADBAND) {
+                    intakePower = -INTAKE_POWER;
+                } else if (gamepad1.right_trigger > TRIGGER_DEADBAND) {
+                    intakePower = INTAKE_POWER;
+                }
+                intake.setPower(intakePower);
+
+                // ====================================================
+                // TELEMETRY
+                // ====================================================
+
+                showTelemetry();
             }
-
-            // ====================================================
-            // TELEMETRY
-            // ====================================================
-
-            showTelemetry();
+        } finally {
+            shooterLeft.setVelocity(0);
+            shooterRight.setVelocity(0);
+            intake.setPower(0);
+            LF.setPower(0);
+            LB.setPower(0);
+            RF.setPower(0);
+            RB.setPower(0);
         }
     }
 
@@ -121,14 +205,23 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
     // APPLY PIDF
     // ============================================================
 
+    /* Robot-centric mecanum drive from the supplied drivetrain file.
+     * Speed is limited for early shooter testing; sticks remain unchanged. */
+    private void driveRobot() {
+        double y = -gamepad1.left_stick_y;
+        double x = gamepad1.left_stick_x * 1.1;
+        double rx = gamepad1.right_stick_x;
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
+        LF.setPower(DRIVE_SPEED_LIMIT * (y + x + rx) / denominator);
+        LB.setPower(DRIVE_SPEED_LIMIT * (y - x + rx) / denominator);
+        RF.setPower(DRIVE_SPEED_LIMIT * (y - x - rx) / denominator);
+        RB.setPower(DRIVE_SPEED_LIMIT * (y + x - rx) / denominator);
+    }
+
     private void applyPIDF() {
 
-        shooter.setVelocityPIDFCoefficients(
-                P,
-                I,
-                D,
-                F
-        );
+        shooterLeft.setVelocityPIDFCoefficients(P, I, D, F);
+        shooterRight.setVelocityPIDFCoefficients(P, I, D, F);
     }
 
     // ============================================================
@@ -180,21 +273,21 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
         }
 
         // --------------------------------------------------------
-        // D
+        // I
         // --------------------------------------------------------
 
         if (gamepad1.left_bumper && !lastLeftBumper) {
 
-            D += D_INCREMENT;
+            I += I_INCREMENT;
             applyPIDF();
         }
 
         if (gamepad1.right_bumper && !lastRightBumper) {
 
-            D -= D_INCREMENT;
+            I -= I_INCREMENT;
 
-            if (D < 0) {
-                D = 0;
+            if (I < 0) {
+                I = 0;
             }
 
             applyPIDF();
@@ -262,9 +355,11 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
 
     private void showTelemetry() {
 
-        double actualVelocity = shooter.getVelocity();
+        double leftVelocity = shooterLeft.getVelocity();
+        double rightVelocity = shooterRight.getVelocity();
 
-        double error = TARGET_VELOCITY - actualVelocity;
+        double leftError = TARGET_VELOCITY - leftVelocity;
+        double rightError = TARGET_VELOCITY - rightVelocity;
 
         telemetry.addLine("===== PIDF TESTER =====");
 
@@ -281,17 +376,12 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
                 TARGET_VELOCITY
         );
 
-        telemetry.addData(
-                "Actual Velocity",
-                "%.0f",
-                actualVelocity
-        );
-
-        telemetry.addData(
-                "Error",
-                "%.0f",
-                error
-        );
+        telemetry.addData("Left Velocity", "%.0f", leftVelocity);
+        telemetry.addData("Right Velocity", "%.0f", rightVelocity);
+        telemetry.addData("Left Error", "%.0f", leftError);
+        telemetry.addData("Right Error", "%.0f", rightError);
+        telemetry.addData("Intake power", "%.2f", intake.getPower());
+        telemetry.addData("Drive speed limit", "%.0f%%", DRIVE_SPEED_LIMIT * 100);
 
         telemetry.addLine("");
 
@@ -301,6 +391,7 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
         telemetry.addData("I", "%.7f", I);
         telemetry.addData("D", "%.7f", D);
         telemetry.addData("F", "%.7f", F);
+        telemetry.addData("Toggle input", "START / L3");
 
         telemetry.addLine("");
 
@@ -314,11 +405,16 @@ public class BIOBUZZ_ShooterPIDFTester extends LinearOpMode {
         telemetry.addLine("");
 
         telemetry.addLine("CONTROLS");
+        telemetry.addLine("Left stick = Drive / strafe");
+        telemetry.addLine("Right stick X = Rotate");
         telemetry.addLine("A/B = P +/-");
         telemetry.addLine("X/Y = F +/-");
-        telemetry.addLine("LB/RB = D +/-");
+        telemetry.addLine("LB/RB = I +/-");
         telemetry.addLine("DPad Up/Down = Target");
         telemetry.addLine("DPad Left/Right = Step Size");
+        telemetry.addLine("START or L3 = Both shooters ON/OFF");
+        telemetry.addLine("RT = Intake forward (hold)");
+        telemetry.addLine("LT = Intake reverse (hold)");
 
         telemetry.update();
     }
