@@ -19,6 +19,11 @@ public class Tele extends LinearOpMode {
     public void runOpMode() {
         flywheel = hardwareMap.get(DcMotor.class, "flywheel");
 
+
+
+        waitForStart();
+        driver
+
         Launcher.shoot().schedule();
 
         while (opModeIsActive()) {
