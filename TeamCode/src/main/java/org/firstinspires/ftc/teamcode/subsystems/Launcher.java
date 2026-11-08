@@ -1,36 +1,45 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import static com.pedropathing.ivy.commands.Commands.infinite;
+
 import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.behaviors.EndCondition;
 import com.pedropathing.ivy.commands.Commands;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.Robot.Robot;
+
 public class Launcher {
-    public static DcMotor flywheel = null;
-    public boolean activated = false;
+    public DcMotorEx flywheel;
+    public static boolean activated = false;
 
-    public void init(HardwareMap hardwareMap) {
-        flywheel = hardwareMap.get(DcMotor.class, "Flywheel");
+    public Launcher(Robot robot) {
+        flywheel = robot.hardwareMap.get(DcMotorEx.class, "Flywheel");
     }
 
-    public void off() {
-        activated = false;
-        flywheel.setPower(0);
+    private void setPower(double power) {
+        flywheel.setPower(power);
     }
+
     public void on() {
         activated = true;
     }
 
-    public void shoot() {
-        if (activated)
-                flywheel.setPower(1);
+    public void off() {
+        activated = false;
     }
 
-    public Command toggle() {
-        return Commands.instant(this::shoot);
+    public Command periodic() {
+        return infinite(() -> {
+            if(activated) {
+                setPower(1);
+            } else {
+                setPower(0);
+            }
+        });
     }
-
-
 }
 
 
