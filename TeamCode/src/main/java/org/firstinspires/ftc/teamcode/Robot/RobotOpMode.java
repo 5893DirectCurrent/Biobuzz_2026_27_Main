@@ -5,6 +5,8 @@ import static com.pedropathing.ivy.Scheduler.schedule;
 import com.pedropathing.ivy.Scheduler;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
 public abstract class RobotOpMode extends OpMode {
     protected Robot robot;
 
@@ -24,6 +26,7 @@ public abstract class RobotOpMode extends OpMode {
     @Override
     public void init_loop() {
         Scheduler.execute();
+        robot.drivetrain.pinpointOdometry.update();
     }
 
     @Override
@@ -42,6 +45,10 @@ public abstract class RobotOpMode extends OpMode {
             telemetry.addData("BackLeftPower", robot.drivetrain.backLeftSpeedR);
             telemetry.addData("BackRightPower", robot.drivetrain.backRightSpeedR);
         }
+        telemetry.addData("X cord", robot.drivetrain.pinpointOdometry.getEncoderX());
+        telemetry.addData("X cord", robot.drivetrain.pinpointOdometry.getEncoderY());
+        telemetry.addData("X cord", robot.drivetrain.pinpointOdometry.getHeading(AngleUnit.DEGREES));
         telemetry.update();
+        robot.drivetrain.pinpointOdometry.update();
     }
 }

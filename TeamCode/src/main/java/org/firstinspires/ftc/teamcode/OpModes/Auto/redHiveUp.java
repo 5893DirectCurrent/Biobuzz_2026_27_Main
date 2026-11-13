@@ -13,6 +13,9 @@ import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Robot.Robot;
 import org.firstinspires.ftc.teamcode.Robot.RobotOpMode;
 
@@ -38,6 +41,9 @@ public class redHiveUp extends RobotOpMode {
 
     @Override
     public void init() {
+        robot.drivetrain.pinpointOdometry.setPosX(58.75, DistanceUnit.INCH);
+        robot.drivetrain.pinpointOdometry.setPosX(7.75, DistanceUnit.INCH);
+        robot.drivetrain.pinpointOdometry.setHeading(90, AngleUnit.DEGREES);
         follower.setPose(startPose);
     }
 
