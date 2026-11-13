@@ -15,7 +15,7 @@ public abstract class RobotOpMode extends OpMode {
         robot = new Robot(this);
         schedule(
                 robot.launcher.periodic(),
-                robot.intake.periodic(),
+                //robot.intake.periodic(),
                 robot.shootPoseRed.periodic(),
                 robot.shootPoseBlue.periodic()
         );
