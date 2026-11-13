@@ -18,7 +18,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Robot.Robot;
 
 public class Drivetrain {
-
     public DcMotor frontLeftDrive, frontRightDrive, backLeftDrive, backRightDrive;
     public double frontLeftSpeedR, frontRightSpeedR, backLeftSpeedR, backRightSpeedR;
     public double frontLeftSpeedF, frontRightSpeedF, backLeftSpeedF, backRightSpeedF;
@@ -28,6 +27,7 @@ public class Drivetrain {
 
     //Field Centric
     public GoBildaPinpointDriver pinpointOdometry;
+    public Pose2D currentPos = pinpointOdometry.getPosition();
     public NavxMicroNavigationSensor navxOdometry;
     public IMU imu;
     public boolean RobotCentric = false;
@@ -45,7 +45,7 @@ public class Drivetrain {
         backLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        //pinpointOdometry = robot.hardwareMap.get(GoBildaPinpointDriver.class, "Pinpoint");
+        pinpointOdometry = robot.hardwareMap.get(GoBildaPinpointDriver.class, "Pinpoint");
         //navxOdometry = robot.hardwareMap.get(NavxMicroNavigationSensor.class, "Navx");
         imu = robot.hardwareMap.get(IMU.class, "IMU");
 
@@ -92,19 +92,18 @@ public class Drivetrain {
     public void fieldCentric(double forward, double strafe, double turn) {
         //Math
         //Pinpoint
-        /*Pose2D currentPos = pinpointOdometry.getPosition();
         double heading = currentPos.getHeading(AngleUnit.RADIANS);
         double cosAngle = Math.cos((Math.PI / 2)-heading);
         double sinAngle = Math.sin((Math.PI / 2)-heading);
         double fieldStrafe = -forward * sinAngle + strafe * cosAngle;
-        double fieldForward = forward * cosAngle + strafe * sinAngle;*/
+        double fieldForward = forward * cosAngle + strafe * sinAngle;
 
         //IMU
-        double theta = Math.atan2(forward, strafe);
+        /*double theta = Math.atan2(forward, strafe);
         double r = Math.hypot(strafe, forward);
         theta = AngleUnit.normalizeRadians(theta - imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
         double fieldForward = r * Math.sin(theta);
-        double fieldStrafe = r * Math.cos(theta);
+        double fieldStrafe = r * Math.cos(theta);*/
 
 
         frontLeftSpeedF = fieldForward + fieldStrafe + turn;
@@ -124,19 +123,11 @@ public class Drivetrain {
         }
 
         if(!RobotCentric) {
-            frontLeftDrive.setPower(frontLeftSpeedF);
+            frontLeftDrive.setPower(frontLeftSpeedF * drivePower);
             frontRightDrive.setPower(frontRightSpeedF);
             backLeftDrive.setPower(backLeftSpeedF);
             backRightDrive.setPower(backRightSpeedF);
         }
 
-    } /*
-    /*public Command periodic() {
-        return infinite(()->{
-        telemetry.addData("FrontLeftPower", frontLeftSpeedR);
-        telemetry.addData("FrontRightPower", frontRightSpeedR);
-        telemetry.addData("BackLeftPower", backLeftSpeedR);
-        telemetry.addData("BackRightPower", backRightSpeedR);
-        });
-    }*/
+    }
 }

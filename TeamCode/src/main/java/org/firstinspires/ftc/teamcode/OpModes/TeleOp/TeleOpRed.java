@@ -1,19 +1,13 @@
-package org.firstinspires.ftc.teamcode.OpModes;
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
+package org.firstinspires.ftc.teamcode.OpModes.TeleOp;
 
-import com.pedropathing.ivy.behaviors.EndCondition;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.Robot.Robot;
 import org.firstinspires.ftc.teamcode.Robot.RobotOpMode;
 
-@TeleOp(name="TeleOp", group="Linear OpMode")
-public class Tele extends RobotOpMode {
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-
+@TeleOp(name="redSide", group="Linear OpMode")
+public class TeleOpRed extends RobotOpMode {
     @Override
     public void init() {
         super.init();
@@ -39,36 +33,56 @@ public class Tele extends RobotOpMode {
                     gamepad1.right_stick_x
             );
 
-        if(gamepad1.left_bumper) {
-            robot.drivetrain.drivePower = .5;
-        } else {
-            robot.drivetrain.drivePower = 1;
-        }
-
-        if(gamepad2.a) {
-            robot.launcher.on();
-        } else {
-            robot.launcher.off();
-        }
-
+        //Gamepad1/Driver
         if(gamepad1.left_bumper) {
             robot.drivetrain.drivePower = robot.drivetrain.slow;
         } else {
             robot.drivetrain.drivePower = 1;
         }
 
+        if(gamepad1.right_trigger > 0.5) {
+            robot.intake.on();
+        } else {
+            robot.intake.off();
+        }
+
+        if(gamepad1.left_trigger > 0.5) {
+            robot.intake.out();
+            robot.intake.on();
+        } else {
+            robot.intake.off();
+            robot.intake.in();
+        }
+
         //Pinpoint
-        /*if(gamepad1.y) {
+        if(gamepad1.y) {
             robot.drivetrain.pinpointOdometry.setHeading(0, AngleUnit.DEGREES);
-        }*/
+        }
 
         //IMU
-        if(gamepad1.y) {
+        /*if(gamepad1.y) {
             robot.drivetrain.imu.resetYaw();
-        }
+        }*/
 
         if(gamepad1.share) {
             robot.drivetrain.RobotCentric = true;
+        }
+
+
+        if(gamepad1.dpad_left) {
+            robot.shootPoseRed.runToLeft();
+        } else robot.shootPoseRed.notShootingLeft();
+        if(gamepad1.dpad_right) {
+            robot.shootPoseRed.runToRight();
+        } else {
+            robot.shootPoseRed.notShootingRight();
+        }
+
+        //Gamepad2/Operator
+        if(gamepad2.a) {
+            robot.launcher.on();
+        } else {
+            robot.launcher.off();
         }
 
         super.loop();
