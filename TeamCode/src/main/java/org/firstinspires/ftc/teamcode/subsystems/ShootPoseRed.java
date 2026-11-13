@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.Robot.Robot;
 import com.pedropathing.follower.Follower;
 import static com.pedropathing.api.Paths.*;
 import static com.pedropathing.ivy.commands.Commands.infinite;
+import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
 import com.pedropathing.paths.Path;
 
@@ -57,14 +58,13 @@ public class ShootPoseRed {
 
     public Command periodic() {
         return infinite(() -> {
-            if (goingLeft) {
-                goShootLeft();
-            } else {
-                follower.stop();
+            if(goingLeft) {
+                follow(follower, goShootLeft());
             }
-            if (goingRight) {
-                goShootRight();
-            } else {
+            if(goingRight) {
+                follow(follower, goShootRight());
+            }
+            if(!goingLeft && !goingRight) {
                 follower.stop();
             }
         });

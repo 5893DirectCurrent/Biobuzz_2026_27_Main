@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+/*package org.firstinspires.ftc.teamcode.subsystems;
 
 import static com.pedropathing.ivy.commands.Commands.infinite;
 
@@ -33,7 +33,7 @@ public class Intake {
         outtake = true;
     }
     public void in() {
-        outtake = true;
+        outtake = false;
     }
 
     public Command periodic() {
@@ -51,4 +51,4 @@ public class Intake {
             }
         });
     }
-}
+}*/

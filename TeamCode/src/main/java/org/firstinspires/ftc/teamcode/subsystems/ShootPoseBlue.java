@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.ivy.commands.Commands.infinite;
+import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
@@ -57,13 +58,12 @@ public class ShootPoseBlue {
     public Command periodic() {
         return infinite(() -> {
             if (goingLeft) {
-                goShootLeft();
-            } else {
-                follower.stop();
+                follow(follower, goShootLeft());
             }
             if (goingRight) {
-                goShootRight();
-            } else {
+                follow(follower, goShootRight());
+            }
+            if(!goingLeft && !goingRight) {
                 follower.stop();
             }
         });
