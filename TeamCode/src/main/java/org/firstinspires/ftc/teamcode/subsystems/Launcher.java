@@ -12,15 +12,18 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.Robot.Robot;
 
 public class Launcher {
-    public DcMotorEx flywheel;
+    public DcMotorEx flywheelL;
+    public DcMotorEx flywheelR;
     public static boolean activated = false;
 
     public Launcher(Robot robot) {
-        flywheel = robot.hardwareMap.get(DcMotorEx.class, "Flywheel");
+        flywheelL = robot.hardwareMap.get(DcMotorEx.class, "FlywheelLeft");
+        flywheelR = robot.hardwareMap.get(DcMotorEx.class, "FlywheelRight");
     }
 
     private void setPower(double power) {
-        flywheel.setPower(power);
+        flywheelL.setPower(power);
+        flywheelR.setPower(power);
     }
 
     public void on() {
