@@ -69,14 +69,14 @@ public class TeleOpRed extends RobotOpMode {
         }
 
 
-        if(gamepad1.dpad_left) {
+        /*if(gamepad1.dpad_left) {
             robot.shootPoseRed.runToLeft();
         } else robot.shootPoseRed.notShootingLeft();
         if(gamepad1.dpad_right) {
             robot.shootPoseRed.runToRight();
         } else {
             robot.shootPoseRed.notShootingRight();
-        }
+        }*/
 
         //Gamepad2/Operator
         if(gamepad2.a) {

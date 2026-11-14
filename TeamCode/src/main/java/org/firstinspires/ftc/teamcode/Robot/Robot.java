@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.Robot;
 
+import com.pedropathing.follower.Follower;
+import com.pedropathing.revhub.localizers.PinpointLocalizer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -10,8 +12,8 @@ public class Robot {
     public Launcher launcher;
     //public Intake intake;
     public Drivetrain drivetrain;
-    public ShootPoseRed shootPoseRed;
-    public ShootPoseBlue shootPoseBlue;
+    //public ShootPoseRed shootPoseRed;
+    //public ShootPoseBlue shootPoseBlue;
 
     public Robot(OpMode opMode) {
         hardwareMap = opMode.hardwareMap;

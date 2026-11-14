@@ -16,10 +16,10 @@ public abstract class RobotOpMode extends OpMode {
         
         robot = new Robot(this);
         schedule(
-                robot.launcher.periodic(),
+                robot.launcher.periodic()
                 //robot.intake.periodic(),
-                robot.shootPoseRed.periodic(),
-                robot.shootPoseBlue.periodic()
+                //robot.shootPoseRed.periodic(),
+                //robot.shootPoseBlue.periodic()
         );
     }
 
@@ -32,7 +32,6 @@ public abstract class RobotOpMode extends OpMode {
     @Override
     public void loop() {
         Scheduler.execute();
-        robot.shootPoseRed.follower.setPose(robot.shootPoseRed.startPoseTele);
 
         if(!robot.drivetrain.RobotCentric) {
             telemetry.addData("FrontLeftPower", robot.drivetrain.frontLeftSpeedF);

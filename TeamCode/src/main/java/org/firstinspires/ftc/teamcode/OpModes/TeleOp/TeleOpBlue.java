@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpModes.TeleOp;
 
+import com.pedropathing.ivy.Scheduler;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -67,14 +68,14 @@ public class TeleOpBlue extends RobotOpMode {
             robot.drivetrain.RobotCentric = true;
         }
 
-        if(gamepad1.dpad_left) {
+        /*if(gamepad1.dpad_left) {
             robot.shootPoseBlue.runToLeft();
         } else robot.shootPoseBlue.notShootingLeft();
         if(gamepad1.dpad_right) {
             robot.shootPoseBlue.runToRight();
         } else {
             robot.shootPoseBlue.notShootingRight();
-        }
+        }*/
 
         //Gamepad2/Operator
         if(gamepad2.a) {

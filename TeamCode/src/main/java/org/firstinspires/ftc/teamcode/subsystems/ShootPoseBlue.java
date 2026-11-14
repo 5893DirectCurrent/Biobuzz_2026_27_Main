@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import static com.pedropathing.api.Paths.curve;
+/*import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.ivy.commands.Commands.infinite;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
@@ -57,10 +57,10 @@ public class ShootPoseBlue {
 
     public Command periodic() {
         return infinite(() -> {
-            if (goingLeft) {
+            if(goingLeft) {
                 follow(follower, goShootLeft());
             }
-            if (goingRight) {
+            if(goingRight) {
                 follow(follower, goShootRight());
             }
             if(!goingLeft && !goingRight) {
@@ -68,4 +68,4 @@ public class ShootPoseBlue {
             }
         });
     }
-}
+}*/
