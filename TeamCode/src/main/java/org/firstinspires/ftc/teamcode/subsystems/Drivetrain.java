@@ -92,10 +92,15 @@ public class Drivetrain {
         //Pinpoint
         Pose2D currentPos = pinpointOdometry.getPosition();
         double heading = currentPos.getHeading(AngleUnit.RADIANS);
-        double cosAngle = Math.cos((Math.PI / 2)-heading);
-        double sinAngle = Math.sin((Math.PI / 2)-heading);
-        double fieldStrafe = -forward * sinAngle + strafe * cosAngle;
-        double fieldForward = forward * cosAngle + strafe * sinAngle;
+        //double cosAngle = Math.cos((Math.PI / 2)-heading);
+        //double sinAngle = Math.sin((Math.PI / 2)-heading);
+        double theta = Math.atan2(forward, strafe);
+        double r = Math.hypot(strafe, forward);
+        theta = AngleUnit.normalizeRadians(theta - heading);
+        //double fieldStrafe = -forward * sinAngle + strafe * cosAngle;
+        //double fieldForward = forward * cosAngle + strafe * sinAngle;
+        double fieldForward = r * Math.sin(theta);
+        double fieldStrafe = r * Math.cos(theta);
 
         //IMU
         /*double theta = Math.atan2(forward, strafe);
