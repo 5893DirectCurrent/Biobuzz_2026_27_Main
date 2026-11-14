@@ -4,6 +4,7 @@ import static com.pedropathing.ivy.commands.Commands.infinite;
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
 
+import com.pedropathing.follower.Follower;
 import com.pedropathing.ivy.Command;
 import com.pedropathing.revhub.localizers.RevHubIMU;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
@@ -17,9 +18,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Robot.Robot;
+//import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 public class Drivetrain {
     Robot robot;
+    //Follower follower;
     public DcMotor frontLeftDrive, frontRightDrive, backLeftDrive, backRightDrive;
     public double frontLeftSpeedR, frontRightSpeedR, backLeftSpeedR, backRightSpeedR;
     public double frontLeftSpeedF, frontRightSpeedF, backLeftSpeedF, backRightSpeedF;
@@ -35,6 +38,7 @@ public class Drivetrain {
     //Hardware mapping
     public Drivetrain(Robot robot) {
         //Map drive motors
+        //follower = Constants.create(hardwareMap);
         frontLeftDrive = robot.hardwareMap.get(DcMotor.class, "frontLeftMotor");
         frontRightDrive = robot.hardwareMap.get(DcMotor.class, "frontRightMotor");
         backLeftDrive = robot.hardwareMap.get(DcMotor.class, "backLeftMotor");

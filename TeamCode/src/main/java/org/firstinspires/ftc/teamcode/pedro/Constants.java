@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedro;
 
-import com.pedropathing.algorithm.Algorithm;
+/*import com.pedropathing.algorithm.Algorithm;
 import com.pedropathing.algorithm.Foresight;
 import com.pedropathing.drivetrain.Drivetrain;
 import com.pedropathing.follower.Follower;
@@ -44,4 +44,4 @@ public class Constants {
                 new Foresight(null)
         );
     }
-}
+}*/
