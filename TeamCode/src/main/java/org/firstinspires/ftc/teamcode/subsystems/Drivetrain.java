@@ -27,7 +27,6 @@ public class Drivetrain {
 
     //Field Centric
     public GoBildaPinpointDriver pinpointOdometry;
-    public Pose2D currentPos = pinpointOdometry.getPosition();
     public NavxMicroNavigationSensor navxOdometry;
     public IMU imu;
     public boolean RobotCentric = false;
@@ -92,6 +91,7 @@ public class Drivetrain {
     public void fieldCentric(double forward, double strafe, double turn) {
         //Math
         //Pinpoint
+        Pose2D currentPos = pinpointOdometry.getPosition();
         double heading = currentPos.getHeading(AngleUnit.RADIANS);
         double cosAngle = Math.cos((Math.PI / 2)-heading);
         double sinAngle = Math.sin((Math.PI / 2)-heading);
